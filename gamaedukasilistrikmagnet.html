@@ -1,0 +1,877 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Clay Explorer: Petualangan Listrik & Magnet Pantai</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Family -->
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@600;700;800;900&display=swap" rel="stylesheet">
+    <!-- Canvas Confetti -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        clay: {
+                            sand: '#FDE047',
+                            ocean: '#0284C7',
+                            coral: '#FF6B6B',
+                            palm: '#22C55E',
+                            yellow: '#EAB308',
+                            red: '#EF4444',
+                            blue: '#3B82F6',
+                            purple: '#8B5CF6'
+                        }
+                    },
+                    fontFamily: {
+                        fredoka: ['"Fredoka One"', 'cursive'],
+                        nunito: ['"Nunito"', 'sans-serif']
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body {
+            font-family: 'Nunito', sans-serif;
+            background: linear-gradient(180deg, #38BDF8 0%, #BAE6FD 45%, #FEF08A 100%);
+            min-height: 100vh;
+            overflow-x: hidden;
+            user-select: none;
+        }
+
+        .font-game {
+            font-family: 'Fredoka One', cursive;
+        }
+
+        /* Claymorphism Styling Effects */
+        .clay-card {
+            background: #ffffff;
+            border-radius: 28px;
+            box-shadow: 
+                8px 8px 18px rgba(0, 0, 0, 0.12),
+                inset -6px -6px 12px rgba(0, 0, 0, 0.06),
+                inset 6px 6px 12px rgba(255, 255, 255, 0.9);
+            border: 4px solid #38BDF8;
+        }
+
+        .clay-btn {
+            border-radius: 20px;
+            box-shadow: 
+                0px 6px 0px #0284C7,
+                0px 10px 12px rgba(0,0,0,0.18),
+                inset 0px 3px 5px rgba(255,255,255,0.7),
+                inset 0px -4px 6px rgba(0,0,0,0.15);
+            transition: all 0.12s ease-in-out;
+            position: relative;
+            top: 0;
+        }
+
+        .clay-btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            filter: brightness(1.05);
+        }
+
+        .clay-btn:active:not(:disabled) {
+            transform: translateY(4px);
+            box-shadow: 
+                0px 2px 0px #0284C7,
+                0px 3px 6px rgba(0,0,0,0.15),
+                inset 0px 3px 5px rgba(255,255,255,0.7),
+                inset 0px -2px 4px rgba(0,0,0,0.15);
+        }
+
+        .clay-badge {
+            box-shadow: 
+                inset -2px -2px 4px rgba(0,0,0,0.15),
+                inset 2px 2px 4px rgba(255,255,255,0.8);
+        }
+
+        /* Wave Animation */
+        @keyframes waveMove {
+            0% { transform: translateX(0) scaleY(1); }
+            50% { transform: translateX(-20px) scaleY(1.05); }
+            100% { transform: translateX(0) scaleY(1); }
+        }
+
+        .animate-wave {
+            animation: waveMove 6s ease-in-out infinite;
+        }
+
+        /* Character Hop Animation */
+        @keyframes clayHop {
+            0% { transform: translateY(0) scale(1, 1); }
+            40% { transform: translateY(-35px) scale(0.9, 1.1); }
+            70% { transform: translateY(0) scale(1.1, 0.85); }
+            100% { transform: translateY(0) scale(1, 1); }
+        }
+
+        .hop-anim {
+            animation: clayHop 0.5s ease-in-out;
+        }
+
+        /* Floating elements */
+        @keyframes floatSlow {
+            0%, 100% { transform: translateY(0px) rotate(0deg); }
+            50% { transform: translateY(-10px) rotate(3deg); }
+        }
+        .animate-float {
+            animation: floatSlow 4s ease-in-out infinite;
+        }
+
+        /* Timer Bar Pulse */
+        @keyframes timerWarning {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        .timer-low {
+            animation: timerWarning 0.5s infinite;
+        }
+    </style>
+</head>
+<body class="flex flex-col min-h-screen justify-between relative text-slate-800">
+
+    <!-- Latar Belakang Dekorasi Pantai Clay -->
+    <div class="absolute inset-0 pointer-events-none z-0 overflow-hidden">
+        <!-- Awan Clay -->
+        <div class="absolute top-6 left-8 w-28 h-12 bg-white rounded-full opacity-90 shadow-lg animate-float" style="animation-delay: 0s;"></div>
+        <div class="absolute top-12 right-16 w-36 h-14 bg-white rounded-full opacity-90 shadow-lg animate-float" style="animation-delay: 1.5s;"></div>
+        <div class="absolute top-4 left-1/2 -translate-x-1/2 w-32 h-10 bg-white rounded-full opacity-80 shadow-lg animate-float" style="animation-delay: 2.5s;"></div>
+
+        <!-- Matahari Clay -->
+        <div class="absolute top-6 right-8 w-20 h-20 bg-yellow-400 rounded-full border-4 border-yellow-200 shadow-xl flex items-center justify-center">
+            <div class="w-12 h-12 bg-amber-300 rounded-full"></div>
+        </div>
+
+        <!-- Ombak & Laut -->
+        <div class="absolute bottom-0 w-full h-44 bg-sky-500/30 rounded-t-[50px] animate-wave"></div>
+        <div class="absolute bottom-0 w-full h-32 bg-sky-600/40 rounded-t-[40px] animate-wave" style="animation-delay: -2s;"></div>
+    </div>
+
+    <!-- MAIN HEADER GAME SHOW -->
+    <header class="relative z-10 w-full pt-4 px-4 max-w-4xl mx-auto text-center">
+        <div class="bg-gradient-to-r from-amber-400 via-orange-400 to-amber-500 p-3 rounded-3xl shadow-xl border-4 border-white flex justify-between items-center px-4 sm:px-6">
+            <!-- Logo / Judul -->
+            <div class="flex items-center gap-2">
+                <span class="text-2xl sm:text-3xl">🌴</span>
+                <h1 class="font-game text-lg sm:text-2xl text-white drop-shadow-md tracking-wide">CLAY EXPLORER</h1>
+            </div>
+
+            <!-- Controls (Sound & Info) -->
+            <div class="flex items-center gap-2 sm:gap-3">
+                <button id="soundBtn" onclick="toggleSound()" class="bg-white/90 hover:bg-white p-2 rounded-2xl text-lg sm:text-xl shadow transition" title="Efek Suara">
+                    🔊
+                </button>
+                <div class="bg-amber-100/90 px-3 py-1 rounded-2xl font-bold text-amber-900 text-xs sm:text-sm border-2 border-amber-300">
+                    IPA KELAS 9
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- CONTENT CONTAINER -->
+    <main class="relative z-10 flex-grow flex items-center justify-center p-3 sm:p-4 my-2">
+        
+        <!-- SCREEN 1: START / MENU UTAMA -->
+        <div id="startScreen" class="clay-card max-w-lg w-full p-6 sm:p-8 text-center relative z-20">
+            <!-- Karakter Penjelajah Clay SVG -->
+            <div id="mainCharacter" class="w-28 h-28 sm:w-32 sm:h-32 mx-auto mb-3 animate-float">
+                <svg viewBox="0 0 100 100" class="w-full h-full filter drop-shadow-lg">
+                    <!-- Clay Character Body -->
+                    <circle cx="50" cy="55" r="35" fill="#FF8A65" stroke="#D84315" stroke-width="4"/>
+                    <!-- Explorer Hat -->
+                    <path d="M 15 35 Q 50 10 85 35 L 90 42 Q 50 35 10 42 Z" fill="#D7CCC8" stroke="#8D6E63" stroke-width="3"/>
+                    <rect x="30" y="28" width="40" height="8" rx="4" fill="#8D6E63"/>
+                    <!-- Eyes -->
+                    <circle cx="38" cy="52" r="5" fill="#37474F"/>
+                    <circle cx="62" cy="52" r="5" fill="#37474F"/>
+                    <circle cx="40" cy="50" r="2" fill="#FFFFFF"/>
+                    <circle cx="64" cy="50" r="2" fill="#FFFFFF"/>
+                    <!-- Smile -->
+                    <path d="M 42 65 Q 50 73 58 65" fill="none" stroke="#37474F" stroke-width="3" stroke-linecap="round"/>
+                    <!-- Cheeks -->
+                    <circle cx="32" cy="60" r="4" fill="#FF7043" opacity="0.6"/>
+                    <circle cx="68" cy="60" r="4" fill="#FF7043" opacity="0.6"/>
+                </svg>
+            </div>
+
+            <h2 class="font-game text-2xl sm:text-3xl text-sky-900 mb-1">Petualangan Listrik & Magnet!</h2>
+            <p class="text-slate-600 mb-4 text-xs sm:text-sm font-semibold">
+                Jelajahi pulau-pulau pantai dengan menjawab kuis HOTS IPA!
+            </p>
+
+            <!-- FORM IDENTITAS MURID -->
+            <div class="bg-amber-50/90 rounded-2xl p-4 mb-5 border-2 border-amber-300 text-left space-y-3 shadow-inner">
+                <div>
+                    <label for="playerNameInput" class="block text-xs font-bold text-amber-900 mb-1">👤 Nama Lengkap Murid:</label>
+                    <input type="text" id="playerNameInput" placeholder="Ketik nama lengkapmu di sini..." class="w-full px-3 py-2 rounded-xl border-2 border-amber-300 focus:outline-none focus:border-sky-500 font-bold text-xs sm:text-sm text-slate-800 bg-white">
+                </div>
+                <div>
+                    <label for="playerClassInput" class="block text-xs font-bold text-amber-900 mb-1">🏫 Kelas / Rombel:</label>
+                    <select id="playerClassInput" class="w-full px-3 py-2 rounded-xl border-2 border-amber-300 focus:outline-none focus:border-sky-500 font-bold text-xs sm:text-sm text-slate-800 bg-white">
+                        <option value="9A">Kelas 9 - A</option>
+                        <option value="9B">Kelas 9 - B</option>
+                        <option value="9C">Kelas 9 - C</option>
+                        <option value="9D">Kelas 9 - D</option>
+                        <option value="9E">Kelas 9 - E</option>
+                        <option value="9F">Kelas 9 - F</option>
+                    </select>
+                </div>
+            </div>
+
+            <button onclick="validateAndStart()" class="clay-btn w-full py-3.5 bg-emerald-500 text-white font-game text-lg tracking-wider hover:bg-emerald-400">
+                MULAI PETUALANGAN 🚀
+            </button>
+        </div>
+
+        <!-- SCREEN 2: GAMEPLAY (KUIS & LOMPATAN) -->
+        <div id="gameScreen" class="hidden w-full max-w-4xl flex flex-col gap-3 sm:gap-4">
+            
+            <!-- STAGE TRACKER (Visual Lompatan Pantai Clay) -->
+            <div class="clay-card p-3 sm:p-4 bg-gradient-to-r from-sky-400 to-teal-300 relative overflow-hidden border-2 border-white">
+                <!-- BARIS INDIKATOR PROFIL & SKOR -->
+                <div class="flex justify-between items-center mb-3 px-1 gap-2 flex-wrap">
+                    <!-- Profile Badge -->
+                    <div class="bg-white/90 px-3 py-1 rounded-2xl shadow font-bold text-sky-900 text-xs sm:text-sm flex items-center gap-1.5">
+                        <span>🧭</span>
+                        <span id="displayPlayerInfo" class="text-amber-800 font-game">Penjelajah</span>
+                    </div>
+
+                    <!-- Skor & Nyawa & Timer -->
+                    <div class="flex items-center gap-2 sm:gap-3">
+                        <div class="bg-white/90 px-2.5 py-1 rounded-2xl shadow font-game text-amber-600 text-xs sm:text-sm flex items-center gap-1">
+                            ⭐ <span id="scoreText">0</span>
+                        </div>
+                        <div class="bg-white/90 px-2.5 py-1 rounded-2xl shadow font-game text-rose-600 text-xs sm:text-sm flex items-center gap-1">
+                            ❤️ <span id="livesText">❤️❤️❤️</span>
+                        </div>
+                        <div id="timerBadge" class="bg-white/90 px-2.5 py-1 rounded-2xl shadow font-game text-sky-700 text-xs sm:text-sm flex items-center gap-1">
+                            ⏱️ <span id="timerText">30s</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- TIMER PROGRESS BAR -->
+                <div class="w-full bg-white/40 h-2.5 rounded-full overflow-hidden mb-3 border border-white/60">
+                    <div id="timerBar" class="bg-amber-400 h-full w-full transition-all duration-1000 ease-linear"></div>
+                </div>
+
+                <!-- Jalur Lompatan / Island Progress -->
+                <div id="islandTrack" class="relative h-20 bg-sky-200/60 rounded-2xl flex justify-between items-center px-4 sm:px-8 border-2 border-sky-300">
+                    <!-- Pulau-pulau (Diisi secara dinamis oleh JS) -->
+                </div>
+            </div>
+
+            <!-- KARTU SOAL HOTS -->
+            <div class="clay-card p-4 sm:p-6 relative bg-white">
+                <!-- Tag Kategori Soal & Bantuan -->
+                <div class="flex justify-between items-center mb-3">
+                    <span id="questionTopic" class="bg-sky-100 text-sky-800 text-xs font-bold px-3 py-1 rounded-full border border-sky-200">
+                        Topik Kuis
+                    </span>
+                    
+                    <div class="flex items-center gap-2">
+                        <!-- Power-up 50:50 -->
+                        <button id="fiftyFiftyBtn" onclick="useFiftyFifty()" class="bg-amber-100 hover:bg-amber-200 text-amber-800 border border-amber-300 font-bold px-3 py-1 rounded-full text-xs transition flex items-center gap-1 shadow-sm" title="Hapus 2 Jawaban Salah">
+                            🪄 50:50
+                        </button>
+                        <span class="text-xs font-extrabold text-amber-700 bg-amber-50 px-2.5 py-1 rounded-full border border-amber-200">
+                            Pulau <span id="currentQuestionNum">1</span>/<span id="totalQuestionsNum">5</span>
+                        </span>
+                    </div>
+                </div>
+
+                <!-- Teks Soal -->
+                <h3 id="questionText" class="text-sm sm:text-base md:text-lg font-extrabold text-slate-800 mb-4 leading-relaxed">
+                    Memuat pertanyaan...
+                </h3>
+
+                <!-- Pilihan Jawaban (A, B, C, D) -->
+                <div id="optionsContainer" class="grid grid-cols-1 sm:grid-cols-2 gap-2.5 mb-2">
+                    <!-- Diisi dinamis oleh JS -->
+                </div>
+
+                <!-- Kotak Penjelasan / Pembahasan HOTS (Tampil setelah menjawab) -->
+                <div id="explanationBox" class="hidden mt-3 p-3.5 rounded-2xl bg-amber-50 border-2 border-amber-300 text-amber-900 text-xs sm:text-sm animate-fadeIn">
+                    <div class="font-bold flex items-center gap-1 mb-1 text-amber-800">
+                        💡 Pembahasan Konsep HOTS:
+                    </div>
+                    <p id="explanationText" class="text-slate-700 text-xs sm:text-sm leading-relaxed mb-3">
+                        Penjelasan lengkap materi.
+                    </p>
+                    <button id="nextBtn" onclick="nextQuestion()" class="clay-btn px-5 py-2 bg-amber-500 hover:bg-amber-400 text-white font-game text-xs sm:text-sm float-right">
+                        Lanjut Melompat ➔
+                    </button>
+                    <div class="clear-both"></div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- SCREEN 3: HASIL AKHIR (GAMEOVER / WIN) -->
+        <div id="resultScreen" class="hidden clay-card max-w-lg w-full p-6 sm:p-8 text-center relative z-20">
+            <div id="resultIcon" class="text-6xl mb-2">🏆</div>
+            <h2 id="resultTitle" class="font-game text-2xl sm:text-3xl text-sky-900 mb-1">Petualangan Selesai!</h2>
+            <p id="resultSubtitle" class="text-slate-600 font-semibold mb-4 text-xs sm:text-sm">Kamu adalah Penjelajah Sains Sejati!</p>
+
+            <div class="bg-amber-50/90 rounded-2xl p-4 mb-5 border-2 border-amber-200 space-y-2 text-left">
+                <div class="text-sky-900 font-bold text-xs sm:text-sm border-b border-amber-200 pb-2 flex justify-between">
+                    <span>Laporan Murid:</span>
+                    <span id="resultPlayerName" class="text-amber-700 font-game">---</span>
+                </div>
+                <div class="flex justify-between items-center pt-1">
+                    <span class="text-slate-600 text-xs font-bold">Skor Akhir:</span>
+                    <span id="finalScore" class="font-game text-3xl text-amber-600">0</span>
+                </div>
+                <div class="flex justify-between items-center">
+                    <span class="text-slate-600 text-xs font-bold">Akurasi Jawaban:</span>
+                    <span id="accuracyText" class="font-bold text-xs text-sky-800">0%</span>
+                </div>
+                <div class="flex justify-between items-center border-t border-amber-200 pt-2">
+                    <span class="text-slate-600 text-xs font-bold">Gelar Penjelajah:</span>
+                    <span id="badgeTitle" class="font-game text-xs text-emerald-600 bg-emerald-100 px-2 py-0.5 rounded-md">Master Magnet</span>
+                </div>
+            </div>
+
+            <button onclick="restartGame()" class="clay-btn w-full py-3.5 bg-emerald-500 text-white font-game text-base hover:bg-emerald-400">
+                Coba Petualangan Lagi 🔄
+            </button>
+        </div>
+
+    </main>
+
+    <!-- FOOTER -->
+    <footer class="relative z-10 py-2.5 text-center text-[11px] sm:text-xs font-bold text-sky-900 bg-white/40 backdrop-blur-md border-t border-white/50">
+        Gim Edukasi IPA Kelas 9 • Listrik, Magnet & Pemanfaatannya • Media Kuis Gameshow Interaktif
+    </footer>
+
+    <!-- JAVASCRIPT GAME LOGIC -->
+    <script>
+        // DATA SOAL HOTS (Materi Listrik & Magnet Kelas 9)
+        const questionsData = [
+            {
+                id: 1,
+                topic: "Migrasi Hewan & Magnet Bumi",
+                question: "Sebuah kelompok peneliti menemukan bahwa burung migran dapat menempuh jarak ribuan kilometer tanpa tersesat meski cuaca mendung. Jika terjadi badai matahari yang mengganggu medan magnet bumi, dampak paling tepat terhadap navigasi burung tersebut adalah...",
+                options: [
+                    "Burung beralih menggunakan gravitasi bumi secara penuh untuk menentukan arah",
+                    "Burung akan kehilangan arah karena partikel biomagnetik di tubuhnya terganggu",
+                    "Burung dapat terbang lebih cepat karena pengaruh gelombang elektromagnetik",
+                    "Arah terbang burung tidak terpengaruh karena hanya mengandalkan mata"
+                ],
+                answer: 1, // Kunci: B
+                explanation: "Burung migran memiliki partikel magnetit (biomagnetik) di dalam tubuhnya yang berfungsi sebagai kompas alami dengan memanfaatkan medan magnet bumi. Ketika badai matahari mengganggu medan magnet bumi, navigasi alami burung akan terdisrupsi."
+            },
+            {
+                id: 2,
+                topic: "Gaya Lorentz & Motor Listrik",
+                question: "Sebuah kawat penghantar dialiri arus listrik ke arah utara dalam medan magnetik homogen yang arahnya ke timur. Berdasarkan kaidah tangan kanan Gaya Lorentz, arah gaya magnetik yang dialami kawat tersebut adalah...",
+                options: [
+                    "Ke arah barat",
+                    "Ke arah selatan",
+                    "Ke atas (keluar bidang tanah)",
+                    "Ke bawah (masuk bidang tanah)"
+                ],
+                answer: 3, // Kunci: D
+                explanation: "Menggunakan Kaidah Tangan Kanan: Ibu jari = Arus Listrik (Utara), Jari Telunjuk = Medan Magnet (Timur). Arah telapak tangan / gaya Lorentz menunjuk ke arah Bawah (masuk bidang)."
+            },
+            {
+                id: 3,
+                topic: "Transformator (Trafo Step-Down)",
+                question: "Sebuah trafo digunakan untuk menyalakan lampu 12 Volt dari sumber tegangan PLN 220 Volt. Jika jumlah lilitan primer trafo tersebut adalah 1.100 lilitan, berapakah jumlah lilitan sekunder dan jenis trafo yang tepat?",
+                options: [
+                    "60 lilitan, Trafo Step-Down",
+                    "60 lilitan, Trafo Step-Up",
+                    "200 lilitan, Trafo Step-Down",
+                    "120 lilitan, Trafo Step-Up"
+                ],
+                answer: 0, // Kunci: A
+                explanation: "Rumus Trafo: Vp / Vs = Np / Ns. Maka 220 / 12 = 1100 / Ns -> Ns = (12 × 1100) / 220 = 60 lilitan. Karena menurunkan tegangan (220V ke 12V), jenisnya adalah Trafo Step-Down."
+            },
+            {
+                id: 4,
+                topic: "Induksi Elektromagnetik",
+                question: "Dalam percobaan Faraday, sebuah magnet batang digerakkan keluar-masuk kumparan kawat. Untuk menghasilkan GGL Induksi (listrik) yang jauh lebih besar, rekayasa yang paling efektif adalah...",
+                options: [
+                    "Memperlambat gerakan magnet dan mengganti kawat dengan bahan plastik",
+                    "Mengurangi jumlah lilitan kumparan dan membiarkan magnet diam di dalam",
+                    "Menggunakan magnet lebih kuat, menambah lilitan, dan mempercepat gerakan magnet",
+                    "Mengganti kawat kumparan dengan kawat berhambatan sangat besar"
+                ],
+                answer: 2, // Kunci: C
+                explanation: "Besarnya GGL Induksi berbanding lurus dengan: 1) Kecepatan perubahan fluks magnet (gerakan magnet cepat), 2) Kekuatan medan magnet, dan 3) Jumlah lilitan kumparan."
+            },
+            {
+                id: 5,
+                topic: "Teknologi Kereta Maglev",
+                question: "Kereta Maglev dapat melaju sangat cepat melampaui 500 km/jam tanpa gesekan langsung dengan rel. Prinsip elektromagnetik utama yang dimanfaatkan pada sistem ini adalah...",
+                options: [
+                    "Gaya tarik elektrostatik dari muatan listrik statis pada udara",
+                    "Gaya tolak-menolak antar kutub magnet yang sejenis antara rel dan badan kereta",
+                    "Penggunaan induksi panas untuk mencairkan udara di bawah kereta",
+                    "Pemanfaatan gelombang radio frekuensi tinggi untuk mendorong kereta"
+                ],
+                answer: 1, // Kunci: B
+                explanation: "Kereta Maglev (Magnetic Levitation) memanfaatkan gaya tolak-menolak antar kutub magnet yang sejenis (superkonduktor) pada rel dan bawah kereta, sehingga kereta mengapung dan bergerak tanpa gesekan rel."
+            }
+        ];
+
+        // STATE GAME ENGINE
+        let currentQuestionIndex = 0;
+        let score = 0;
+        let lives = 3;
+        let isAnswered = false;
+        let soundEnabled = true;
+        let playerName = "";
+        let playerClass = "";
+        let timerInterval = null;
+        let timeLeft = 30;
+        let fiftyFiftyUsed = false;
+
+        // AUDIO SYNTHESIZER (Web Audio API - Tanpa File Eksternal)
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        let bgMusicInterval = null;
+        let isMusicPlaying = false;
+        let bgMusicNoteIndex = 0;
+
+        // TROPICAL ADVENTURE BACKGROUND MUSIC MELODY (Notes & Timings)
+        // Frequencies for C Major / A Minor Pentatonic / Bright Tropical Vibes
+        const bgMelody = [
+            { note: 523.25, dur: 0.2 }, { note: 659.25, dur: 0.2 }, { note: 783.99, dur: 0.2 }, { note: 880.00, dur: 0.3 },
+            { note: 783.99, dur: 0.2 }, { note: 659.25, dur: 0.2 }, { note: 523.25, dur: 0.4 }, { note: 0, dur: 0.1 },
+            { note: 587.33, dur: 0.2 }, { note: 659.25, dur: 0.2 }, { note: 698.46, dur: 0.2 }, { note: 783.99, dur: 0.3 },
+            { note: 659.25, dur: 0.2 }, { note: 587.33, dur: 0.2 }, { note: 523.25, dur: 0.4 }, { note: 0, dur: 0.1 },
+            { note: 880.00, dur: 0.2 }, { note: 880.00, dur: 0.2 }, { note: 783.99, dur: 0.2 }, { note: 659.25, dur: 0.2 },
+            { note: 698.46, dur: 0.2 }, { note: 783.99, dur: 0.2 }, { note: 880.00, dur: 0.4 }, { note: 0, dur: 0.1 },
+            { note: 1046.50, dur: 0.3 }, { note: 880.00, dur: 0.2 }, { note: 783.99, dur: 0.2 }, { note: 659.25, dur: 0.3 },
+            { note: 587.33, dur: 0.2 }, { note: 659.25, dur: 0.2 }, { note: 523.25, dur: 0.5 }, { note: 0, dur: 0.2 }
+        ];
+
+        function playBgMusicStep() {
+            if (!soundEnabled || !isMusicPlaying) return;
+
+            const item = bgMelody[bgMusicNoteIndex];
+            if (item.note > 0) {
+                const osc = audioCtx.createOscillator();
+                const bassOsc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+
+                // Melody (Tropical Synth Marimba feel)
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(item.note, audioCtx.currentTime);
+
+                // Bassline accompaniment
+                bassOsc.type = 'sine';
+                bassOsc.frequency.setValueAtTime(item.note / 2, audioCtx.currentTime);
+
+                osc.connect(gain);
+                bassOsc.connect(gain);
+                gain.connect(audioCtx.destination);
+
+                // Gentle volume for background music
+                gain.gain.setValueAtTime(0.04, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + item.dur * 0.9);
+
+                osc.start(audioCtx.currentTime);
+                bassOsc.start(audioCtx.currentTime);
+                osc.stop(audioCtx.currentTime + item.dur * 0.9);
+                bassOsc.stop(audioCtx.currentTime + item.dur * 0.9);
+            }
+
+            const stepDuration = item.dur * 1000;
+            bgMusicNoteIndex = (bgMusicNoteIndex + 1) % bgMelody.length;
+
+            bgMusicInterval = setTimeout(playBgMusicStep, stepDuration);
+        }
+
+        function startBgMusic() {
+            if (isMusicPlaying) return;
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+            isMusicPlaying = true;
+            bgMusicNoteIndex = 0;
+            playBgMusicStep();
+        }
+
+        function stopBgMusic() {
+            isMusicPlaying = false;
+            if (bgMusicInterval) {
+                clearTimeout(bgMusicInterval);
+                bgMusicInterval = null;
+            }
+        }
+
+        function playSound(type) {
+            if (!soundEnabled) return;
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+
+            const now = audioCtx.currentTime;
+
+            if (type === 'correct') {
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(523.25, now); // C5
+                osc.frequency.exponentialRampToValueAtTime(659.25, now + 0.08); // E5
+                osc.frequency.exponentialRampToValueAtTime(783.99, now + 0.16); // G5
+                gain.gain.setValueAtTime(0.25, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+                osc.start(now);
+                osc.stop(now + 0.3);
+            } else if (type === 'wrong') {
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(220, now); // A3
+                osc.frequency.linearRampToValueAtTime(130.81, now + 0.2); // C3
+                gain.gain.setValueAtTime(0.25, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.25);
+                osc.start(now);
+                osc.stop(now + 0.25);
+            } else if (type === 'hop') {
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(280, now);
+                osc.frequency.exponentialRampToValueAtTime(560, now + 0.12);
+                gain.gain.setValueAtTime(0.2, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.12);
+                osc.start(now);
+                osc.stop(now + 0.12);
+            } else if (type === 'click') {
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(400, now);
+                gain.gain.setValueAtTime(0.1, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.05);
+                osc.start(now);
+                osc.stop(now + 0.05);
+            }
+        }
+
+        function toggleSound() {
+            soundEnabled = !soundEnabled;
+            document.getElementById('soundBtn').innerText = soundEnabled ? '🔊' : '🔇';
+            if (soundEnabled) {
+                startBgMusic();
+            } else {
+                stopBgMusic();
+            }
+        }
+
+        // VALIDATION & START
+        function validateAndStart() {
+            const nameInput = document.getElementById('playerNameInput').value.trim();
+            const classInput = document.getElementById('playerClassInput').value;
+
+            if (!nameInput) {
+                alert('Silakan masukkan nama kamu terlebih dahulu sebelum memulai petualangan!');
+                document.getElementById('playerNameInput').focus();
+                return;
+            }
+
+            playerName = nameInput;
+            playerClass = classInput;
+
+            startBgMusic();
+            playSound('click');
+            startGame();
+        }
+
+        // INIT GAME
+        function startGame() {
+            currentQuestionIndex = 0;
+            score = 0;
+            lives = 3;
+            isAnswered = false;
+            fiftyFiftyUsed = false;
+
+            document.getElementById('fiftyFiftyBtn').disabled = false;
+            document.getElementById('fiftyFiftyBtn').classList.remove('opacity-50', 'cursor-not-allowed');
+
+            document.getElementById('displayPlayerInfo').innerText = `${playerName} (${playerClass})`;
+
+            document.getElementById('startScreen').classList.add('hidden');
+            document.getElementById('resultScreen').classList.add('hidden');
+            document.getElementById('gameScreen').classList.remove('hidden');
+
+            updateUI();
+            renderIslands();
+            loadQuestion();
+        }
+
+        function updateUI() {
+            document.getElementById('scoreText').innerText = score;
+            document.getElementById('livesText').innerText = '❤️'.repeat(lives) + '🖤'.repeat(3 - lives);
+            document.getElementById('currentQuestionNum').innerText = currentQuestionIndex + 1;
+            document.getElementById('totalQuestionsNum').innerText = questionsData.length;
+        }
+
+        // TIMER SYSTEM
+        function startTimer() {
+            clearInterval(timerInterval);
+            timeLeft = 30;
+            updateTimerDisplay();
+
+            timerInterval = setInterval(() => {
+                timeLeft--;
+                updateTimerDisplay();
+
+                if (timeLeft <= 0) {
+                    clearInterval(timerInterval);
+                    handleTimeout();
+                }
+            }, 1000);
+        }
+
+        function updateTimerDisplay() {
+            document.getElementById('timerText').innerText = `${timeLeft}s`;
+            const timerBar = document.getElementById('timerBar');
+            const percentage = (timeLeft / 30) * 100;
+            timerBar.style.width = `${percentage}%`;
+
+            if (timeLeft <= 10) {
+                timerBar.className = "bg-rose-500 h-full w-full transition-all duration-1000 ease-linear timer-low";
+            } else {
+                timerBar.className = "bg-amber-400 h-full w-full transition-all duration-1000 ease-linear";
+            }
+        }
+
+        function handleTimeout() {
+            if (isAnswered) return;
+            checkAnswer(-1); // Jawaban salah karena waktu habis
+        }
+
+        // RENDER PULAU LOMPATAN
+        function renderIslands() {
+            const islandTrack = document.getElementById('islandTrack');
+            islandTrack.innerHTML = `<div class="absolute inset-x-6 top-1/2 -translate-y-1/2 h-2 bg-amber-200/80 rounded"></div>`;
+
+            questionsData.forEach((q, idx) => {
+                const island = document.createElement('div');
+                island.className = `relative z-10 flex flex-col items-center justify-center transition-all duration-300`;
+                
+                let islandStyle = 'bg-amber-300 border-amber-500 text-amber-900';
+                let icon = '🏝️';
+
+                if (idx < currentQuestionIndex) {
+                    islandStyle = 'bg-emerald-400 border-emerald-600 text-white';
+                    icon = '✅';
+                } else if (idx === currentQuestionIndex) {
+                    islandStyle = 'bg-yellow-400 border-amber-600 text-amber-900 scale-110 ring-4 ring-sky-300';
+                }
+
+                island.innerHTML = `
+                    <div id="island-${idx}" class="w-9 h-9 sm:w-11 sm:h-11 rounded-full ${islandStyle} border-4 flex items-center justify-center font-game text-xs shadow-md relative">
+                        ${idx === currentQuestionIndex ? getClayCharacterSVG() : icon}
+                    </div>
+                    <span class="text-[10px] font-extrabold text-slate-700 mt-1">P-${idx + 1}</span>
+                `;
+
+                islandTrack.appendChild(island);
+            });
+        }
+
+        function getClayCharacterSVG() {
+            return `
+                <div class="absolute -top-5 sm:-top-6 w-7 h-7 sm:w-8 sm:h-8 hop-anim">
+                    <svg viewBox="0 0 100 100">
+                        <circle cx="50" cy="50" r="40" fill="#FF8A65" stroke="#D84315" stroke-width="6"/>
+                        <circle cx="38" cy="45" r="6" fill="#37474F"/>
+                        <circle cx="62" cy="45" r="6" fill="#37474F"/>
+                        <path d="M 40 65 Q 50 75 60 65" fill="none" stroke="#37474F" stroke-width="6" stroke-linecap="round"/>
+                    </svg>
+                </div>
+            `;
+        }
+
+        // LOAD QUESTION
+        function loadQuestion() {
+            isAnswered = false;
+            const q = questionsData[currentQuestionIndex];
+
+            document.getElementById('questionTopic').innerText = `Topik: ${q.topic}`;
+            document.getElementById('questionText').innerText = q.question;
+            document.getElementById('explanationBox').classList.add('hidden');
+
+            const optionsContainer = document.getElementById('optionsContainer');
+            optionsContainer.innerHTML = '';
+
+            const optionLabels = ['A', 'B', 'C', 'D'];
+
+            q.options.forEach((opt, idx) => {
+                const btn = document.createElement('button');
+                btn.className = `clay-btn w-full p-3 sm:p-3.5 text-left bg-sky-50 hover:bg-sky-100 border-2 border-sky-300 rounded-2xl flex items-start gap-2.5 transition font-semibold text-xs sm:text-sm text-slate-800`;
+                btn.onclick = () => checkAnswer(idx);
+                btn.id = `opt-${idx}`;
+
+                btn.innerHTML = `
+                    <span class="clay-badge bg-sky-500 text-white font-game px-2 py-0.5 rounded-lg text-xs">${optionLabels[idx]}</span>
+                    <span class="flex-1 leading-snug">${opt}</span>
+                `;
+
+                optionsContainer.appendChild(btn);
+            });
+
+            startTimer();
+        }
+
+        // POWER-UP 50:50
+        function useFiftyFifty() {
+            if (fiftyFiftyUsed || isAnswered) return;
+            fiftyFiftyUsed = true;
+            playSound('click');
+
+            const q = questionsData[currentQuestionIndex];
+            let incorrectIndices = [];
+            for (let i = 0; i < 4; i++) {
+                if (i !== q.answer) incorrectIndices.push(i);
+            }
+
+            // Pilih random 2 untuk disembunyikan
+            incorrectIndices.sort(() => Math.random() - 0.5);
+            const toHide = incorrectIndices.slice(0, 2);
+
+            toHide.forEach(idx => {
+                const btn = document.getElementById(`opt-${idx}`);
+                btn.disabled = true;
+                btn.classList.add('opacity-30', 'cursor-not-allowed', 'bg-slate-200');
+            });
+
+            const btn50 = document.getElementById('fiftyFiftyBtn');
+            btn50.disabled = true;
+            btn50.classList.add('opacity-40', 'cursor-not-allowed');
+            btn50.innerText = '🪄 Digunakan';
+        }
+
+        // CHECK ANSWER
+        function checkAnswer(selectedIndex) {
+            if (isAnswered) return;
+            isAnswered = true;
+            clearInterval(timerInterval);
+
+            const q = questionsData[currentQuestionIndex];
+            const isCorrect = selectedIndex === q.answer;
+
+            if (isCorrect) {
+                playSound('correct');
+                playSound('hop');
+                score += 20 + Math.floor(timeLeft / 3); // Bonus waktu
+                
+                const selectedBtn = document.getElementById(`opt-${selectedIndex}`);
+                if (selectedBtn) {
+                    selectedBtn.classList.remove('bg-sky-50', 'border-sky-300');
+                    selectedBtn.classList.add('bg-emerald-500', 'text-white', 'border-emerald-600');
+                }
+            } else {
+                playSound('wrong');
+                lives -= 1;
+
+                if (selectedIndex >= 0) {
+                    const selectedBtn = document.getElementById(`opt-${selectedIndex}`);
+                    if (selectedBtn) {
+                        selectedBtn.classList.remove('bg-sky-50', 'border-sky-300');
+                        selectedBtn.classList.add('bg-rose-500', 'text-white', 'border-rose-600');
+                    }
+                }
+
+                // Tunjukkan jawaban yang benar
+                const correctBtn = document.getElementById(`opt-${q.answer}`);
+                if (correctBtn) {
+                    correctBtn.classList.remove('bg-sky-50', 'border-sky-300');
+                    correctBtn.classList.add('bg-emerald-200', 'border-emerald-500', 'text-emerald-900', 'font-extrabold');
+                }
+            }
+
+            // Nonaktifkan semua pilihan
+            for (let i = 0; i < 4; i++) {
+                const b = document.getElementById(`opt-${i}`);
+                if (b) b.disabled = true;
+            }
+
+            // Tampilkan Pembahasan HOTS
+            document.getElementById('explanationText').innerText = q.explanation;
+            document.getElementById('explanationBox').classList.remove('hidden');
+
+            updateUI();
+        }
+
+        // NEXT QUESTION
+        function nextQuestion() {
+            if (lives <= 0) {
+                endGame(false);
+                return;
+            }
+
+            currentQuestionIndex++;
+
+            if (currentQuestionIndex >= questionsData.length) {
+                endGame(true);
+            } else {
+                renderIslands();
+                loadQuestion();
+                updateUI();
+            }
+        }
+
+        // END GAME
+        function endGame(isWin) {
+            clearInterval(timerInterval);
+            stopBgMusic();
+
+            document.getElementById('gameScreen').classList.add('hidden');
+            document.getElementById('resultScreen').classList.remove('hidden');
+
+            const resultIcon = document.getElementById('resultIcon');
+            const resultTitle = document.getElementById('resultTitle');
+            const resultSubtitle = document.getElementById('resultSubtitle');
+            const finalScore = document.getElementById('finalScore');
+            const accuracyText = document.getElementById('accuracyText');
+            const badgeTitle = document.getElementById('badgeTitle');
+
+            document.getElementById('resultPlayerName').innerText = `${playerName} (${playerClass})`;
+
+            finalScore.innerText = score;
+            const accuracy = Math.round((score / (questionsData.length * 30)) * 100);
+            accuracyText.innerText = `${Math.min(100, accuracy)}%`;
+
+            if (score >= 90) {
+                badgeTitle.innerText = "🌟 Master Listrik & Magnet";
+            } else if (score >= 60) {
+                badgeTitle.innerText = "🧭 Penjelajah Handal IPA";
+            } else {
+                badgeTitle.innerText = "⚓ Penjelajah Pemula";
+            }
+
+            if (isWin && score >= 50) {
+                resultIcon.innerText = '🏆';
+                resultTitle.innerText = 'Luar Biasa, Penjelajah!';
+                resultSubtitle.innerText = 'Kamu berhasil menguasai materi Listrik & Magnet dengan sangat baik!';
+                
+                // Confetti Kemenangan
+                confetti({
+                    particleCount: 120,
+                    spread: 80,
+                    origin: { y: 0.6 }
+                });
+            } else {
+                resultIcon.innerText = '⛵';
+                resultTitle.innerText = 'Petualangan Selesai!';
+                resultSubtitle.innerText = 'Tetap semangat! Pelajari kembali materi listrik & magnet lalu coba lagi.';
+            }
+        }
+
+        function restartGame() {
+            playSound('click');
+            startBgMusic();
+            startGame();
+        }
+    </script>
+</body>
+</html>
